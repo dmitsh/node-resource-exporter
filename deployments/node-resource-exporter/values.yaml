@@ -17,6 +17,7 @@ fullnameOverride: ""
 cmd:
   port: 9090
   resources: "cpu,memory,nvidia.com/gpu"
+  nodeLabels: "nodeInstance,nodeType"
 
 serviceAccount:
   # Specifies whether a service account should be created
