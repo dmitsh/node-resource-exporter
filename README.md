@@ -4,11 +4,11 @@ The Node Resource Exporter is a Prometheus tool designed to gather and report st
 
 For instance, to monitor GPU usage, you can use the following PromQL query:
 ```
-sum(node_resource_usage{resource="nvidia.com/gpu"}) by (node)
+sum(node_resource_utilization{resource="nvidia.com/gpu"}) by (node)
 ```
 
 If you need to determine the total time (in seconds) during which resource usage was below 100%, you can use this query:
 ```
 sum_over_time(
-  (sum(node_resource_usage{resource="nvidia.com/gpu"}) by (node) < bool 100)[24h:15s]) * 15
+  (sum(node_resource_utilization{resource="nvidia.com/gpu"}) by (node) < bool 100)[24h:15s]) * 15
 ```

@@ -43,6 +43,8 @@ spec:
             - "{{ .Values.cmd.port }}"
             - -r
             - {{ .Values.cmd.resources }}
+            - -l
+            - {{ .Values.cmd.nodeLabels }}
           ports:
             - name: metrics
               containerPort: {{ .Values.cmd.port }}
