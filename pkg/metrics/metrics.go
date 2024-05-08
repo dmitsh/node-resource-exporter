@@ -6,10 +6,10 @@ import (
 )
 
 type Metrics struct {
-	NodeLabelNames          []string
-	NodeResourceRequests    *prometheus.GaugeVec
-	NodeResourceLimits      *prometheus.GaugeVec
-	NodeResourceUtilization *prometheus.GaugeVec
+	NodeLabelNames        []string
+	NodeResourceRequests  *prometheus.GaugeVec
+	NodeResourceLimits    *prometheus.GaugeVec
+	NodeResourceOccupancy *prometheus.GaugeVec
 }
 
 func New(nodeLabels []string) *Metrics {
@@ -29,10 +29,10 @@ func New(nodeLabels []string) *Metrics {
 				Help: "Gauge of node resource limits.",
 			}, labels),
 
-		NodeResourceUtilization: promauto.NewGaugeVec(
+		NodeResourceOccupancy: promauto.NewGaugeVec(
 			prometheus.GaugeOpts{
-				Name: "node_resource_utilization",
-				Help: "Utilization percentage of node resource.",
+				Name: "node_resource_occupancy",
+				Help: "Occupancy percentage of node resource.",
 			}, labels),
 	}
 }

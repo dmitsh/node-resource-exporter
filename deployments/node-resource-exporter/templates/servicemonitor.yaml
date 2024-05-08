@@ -8,7 +8,7 @@ metadata:
   namespace: {{ .Values.monitoring.namespace }}
 spec:
   endpoints:
-  - interval: 15s
+  - interval: 10s
     port: metrics
     scheme: http
   namespaceSelector:

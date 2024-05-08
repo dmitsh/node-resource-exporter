@@ -143,7 +143,7 @@ func reportResourceUsage(ctx context.Context, kubeClient *kubernetes.Clientset, 
 			// get resource usage in percents
 			if v, ok := node.Status.Allocatable[corev1.ResourceName(resource)]; ok {
 				if allocatable := v.AsApproximateFloat64(); allocatable > 0 {
-					metric.NodeResourceUtilization.WithLabelValues(labels...).Set(val * 100.0 / allocatable)
+					metric.NodeResourceOccupancy.WithLabelValues(labels...).Set(val * 100.0 / allocatable)
 				}
 			}
 			// get resource limits
