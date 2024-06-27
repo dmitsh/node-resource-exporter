@@ -121,6 +121,9 @@ func reportResourceUsage(ctx context.Context, kubeClient *kubernetes.Clientset, 
 		limits := corev1.ResourceList{}
 
 		for _, pod := range pods.Items {
+			if pod.Status.Phase != corev1.PodRunning {
+				continue
+			}
 			for _, container := range pod.Spec.Containers {
 				addResourceList(requests, container.Resources.Requests)
 				addResourceList(limits, container.Resources.Limits)

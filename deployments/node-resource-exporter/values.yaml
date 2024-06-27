@@ -8,7 +8,7 @@ image:
   repository: docker.io/dmitsh/node-resource-exporter
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "0.1"
+  tag: "0.2"
 
 imagePullSecrets: []
 nameOverride: ""
@@ -114,4 +114,4 @@ affinity: {}
 
 monitoring:
   enabled: true
-  namespace: nsv-monitoring
+  namespace: prometheus

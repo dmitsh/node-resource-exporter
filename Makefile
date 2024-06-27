@@ -1,5 +1,5 @@
 PROJECT=node-resource-exporter
-IMAGE_VER=0.1
+IMAGE_VER=0.2
 IMAGE_NAME=${PROJECT}:${IMAGE_VER}
 IMAGE_URL=docker.io/dmitsh/${IMAGE_NAME}
 
