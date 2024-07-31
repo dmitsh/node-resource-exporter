@@ -8,7 +8,7 @@ image:
   repository: docker.io/dmitsh/node-resource-exporter
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "0.3"
+  tag: "0.2"
 
 imagePullSecrets: []
 nameOverride: ""
@@ -18,7 +18,6 @@ cmd:
   port: 9090
   resources: "cpu,memory,nvidia.com/gpu"
   nodeLabels: "nodeInstance,nodeType"
-  verbosity: 4
 
 serviceAccount:
   # Specifies whether a service account should be created
@@ -106,7 +105,8 @@ volumeMounts: []
 #   mountPath: "/etc/foo"
 #   readOnly: true
 
-nodeSelector: {}
+nodeSelector:
+  nodeType: cpu
 
 tolerations: []
 
@@ -114,3 +114,4 @@ affinity: {}
 
 monitoring:
   enabled: true
+  namespace: nsv-monitoring

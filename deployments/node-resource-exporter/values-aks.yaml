@@ -8,7 +8,7 @@ image:
   repository: docker.io/dmitsh/node-resource-exporter
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "0.3"
+  tag: "0.2"
 
 imagePullSecrets: []
 nameOverride: ""
@@ -18,7 +18,6 @@ cmd:
   port: 9090
   resources: "cpu,memory,nvidia.com/gpu"
   nodeLabels: "nodeInstance,nodeType"
-  verbosity: 4
 
 serviceAccount:
   # Specifies whether a service account should be created
@@ -106,11 +105,33 @@ volumeMounts: []
 #   mountPath: "/etc/foo"
 #   readOnly: true
 
-nodeSelector: {}
+nodeSelector:
+  agentpool: system
 
-tolerations: []
+tolerations:
+  - effect: NoSchedule
+    operator: Exists
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+  - effect: NoSchedule
+    key: node.kubernetes.io/disk-pressure
+    operator: Exists
+  - effect: NoSchedule
+    key: node.kubernetes.io/memory-pressure
+    operator: Exists
+  - effect: NoSchedule
+    key: node.kubernetes.io/pid-pressure
+    operator: Exists
+  - effect: NoSchedule
+    key: node.kubernetes.io/unschedulable
+    operator: Exists
 
 affinity: {}
 
 monitoring:
   enabled: true
+  namespace: nsv-monitoring

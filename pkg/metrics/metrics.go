@@ -10,10 +10,12 @@ type Metrics struct {
 	NodeResourceRequests  *prometheus.GaugeVec
 	NodeResourceLimits    *prometheus.GaugeVec
 	NodeResourceOccupancy *prometheus.GaugeVec
+	NodeResourceScore     *prometheus.GaugeVec
 }
 
 func New(nodeLabels []string) *Metrics {
-	labels := append([]string{"node", "resource"}, nodeLabels...)
+	scoreLabels := append([]string{"resource"}, nodeLabels...)
+	labels := append([]string{"node"}, scoreLabels...)
 
 	return &Metrics{
 		NodeLabelNames: nodeLabels,
@@ -34,5 +36,37 @@ func New(nodeLabels []string) *Metrics {
 				Name: "node_resource_occupancy",
 				Help: "Occupancy percentage of node resource.",
 			}, labels),
+		NodeResourceScore: promauto.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: "node_resource_score",
+				Help: "Occupancy score of node resource."}, scoreLabels),
 	}
+}
+
+type ResourceScore struct {
+	scores map[string]*Score
+}
+
+type Score struct {
+	total float64
+	count int64
+}
+
+func NewResourceScore() *ResourceScore {
+	return &ResourceScore{
+		scores: make(map[string]*Score),
+	}
+}
+
+func (s *ResourceScore) Score(resource string, occ float64) float64 {
+	score, ok := s.scores[resource]
+	if !ok {
+		score = &Score{total: occ, count: 1}
+	} else {
+		score.total += occ
+		score.count++
+	}
+	s.scores[resource] = score
+
+	return 100.0 * score.total / float64(score.count)
 }
