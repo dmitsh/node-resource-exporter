@@ -1,7 +1,8 @@
-PROJECT=node-resource-exporter
-IMAGE_VER=0.3
-IMAGE_NAME=${PROJECT}:${IMAGE_VER}
-IMAGE_URL=docker.io/dmitsh/${IMAGE_NAME}
+PROJECT = node-resource-exporter
+IMAGE_VER := 0.3
+IMAGE_NAME := ${PROJECT}:${IMAGE_VER}
+IMAGE_URL := docker.io/dmitsh/${IMAGE_NAME}
+NAMESPACE ?= monitoring
 
 .PHONY: build
 build:
@@ -23,5 +24,5 @@ image-push: image-build
 .PHONY: helm-install
 helm-install:
 	helm upgrade --install node-resource-exporter \
-	--wait --timeout=300s \
+	--namespace ${NAMESPACE} --wait --timeout=300s \
 	./deployments/node-resource-exporter
