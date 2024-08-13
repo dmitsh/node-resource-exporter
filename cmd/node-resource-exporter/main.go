@@ -20,13 +20,16 @@ import (
 )
 
 type args struct {
-	port                  int
-	nodeLabels, resources string
+	port       int
+	namespace  string
+	nodeLabels string
+	resources  string
 }
 
 func main() {
 	var args args
 	flag.IntVar(&args.port, "p", 8080, "Prometheus target port")
+	flag.StringVar(&args.namespace, "n", "", "Tracking namespace (all if not set)")
 	flag.StringVar(&args.resources, "r", "", "Comma-separated list of tracked resource names")
 	flag.StringVar(&args.nodeLabels, "l", "", "Comma-separated list of node label names to be passed onto metrics")
 
@@ -83,7 +86,7 @@ func mainInternal(args *args) error {
 	g.Add(
 		func() error {
 			log.Infof("Starting sampling loop")
-			return startResourceSamplingLoop(ctx, kubeClient, strings.Split(args.resources, ","), nodeLabels)
+			return startResourceSamplingLoop(ctx, kubeClient, args.namespace, strings.Split(args.resources, ","), nodeLabels)
 		},
 		func(err error) {
 			log.Infof("Stopping sampling loop: %v", err)
@@ -94,7 +97,7 @@ func mainInternal(args *args) error {
 	return g.Run()
 }
 
-func startResourceSamplingLoop(ctx context.Context, kubeClient *kubernetes.Clientset, resources, nodeLabels []string) error {
+func startResourceSamplingLoop(ctx context.Context, kubeClient *kubernetes.Clientset, namespace string, resources, nodeLabels []string) error {
 	defer log.Infof("Exited sampling loop")
 	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
@@ -102,7 +105,7 @@ func startResourceSamplingLoop(ctx context.Context, kubeClient *kubernetes.Clien
 	for {
 		select {
 		case <-ticker.C:
-			metrics.ReportResourceUsage(ctx, kubeClient, resources, nodeLabels)
+			metrics.ReportResourceUsage(ctx, kubeClient, namespace, resources, nodeLabels)
 
 		case <-ctx.Done():
 			return ctx.Err()

@@ -8,7 +8,7 @@ image:
   repository: docker.io/dmitsh/node-resource-exporter
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "0.3"
+  tag: "0.4"
 
 imagePullSecrets: []
 nameOverride: ""
@@ -16,6 +16,7 @@ fullnameOverride: ""
 
 cmd:
   port: 9090
+  namespace: default
   resources: "cpu,memory,nvidia.com/gpu"
   nodeLabels: "nodeInstance,nodeType"
   verbosity: 4
