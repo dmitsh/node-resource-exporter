@@ -2,6 +2,8 @@ package metrics
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -9,46 +11,49 @@ import (
 	log "k8s.io/klog/v2"
 )
 
-func ReportResourceUsage(ctx context.Context, kubeClient *kubernetes.Clientset, resources, nodeLabels []string) {
-	nodeList, err := kubeClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+type resourceList struct {
+	requests corev1.ResourceList
+	limits   corev1.ResourceList
+}
+
+func ReportResourceUsage(ctx context.Context, client *kubernetes.Clientset, namespace string, resources, nodeLabels []string) {
+	start := time.Now()
+	nodeResources, err := getNodeResourceMap(ctx, client, namespace)
+	if err != nil {
+		log.Infof("ERROR: %v", err)
+		return
+	}
+
+	nodes, err := client.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 	if err != nil {
 		log.Infof("ERROR: failed to list the nodes: %v", err)
 		return
 	}
 
-	for _, node := range nodeList.Items {
+	empty := &resourceList{
+		requests: make(corev1.ResourceList),
+		limits:   make(corev1.ResourceList),
+	}
+
+	for _, node := range nodes.Items {
 		nodeLabelValues := make([]string, len(nodeLabels))
 		for i, name := range nodeLabels {
 			nodeLabelValues[i] = node.Labels[name]
 		}
 
-		pods, err := kubeClient.CoreV1().Pods("").List(ctx, metav1.ListOptions{FieldSelector: "spec.nodeName=" + node.Name})
-		if err != nil {
-			log.Infof("ERROR: failed to get pods for node %s: %v", node.Name, err)
-			continue
+		list, ok := nodeResources[node.Name]
+		if !ok {
+			list = empty
 		}
 
-		requests := corev1.ResourceList{}
-		limits := corev1.ResourceList{}
-
-		for _, pod := range pods.Items {
-			if pod.Status.Phase != corev1.PodRunning {
-				continue
-			}
-			for _, container := range pod.Spec.Containers {
-				addResourceList(requests, container.Resources.Requests)
-				addResourceList(limits, container.Resources.Limits)
-			}
-		}
-
-		log.Infof("Total requests on node %s: %v", node.Name, requests)
-		log.Infof("Total limits on node %s: %v", node.Name, limits)
+		//log.Infof("Total requests on node %s: %v", node.Name, requests)
+		//log.Infof("Total limits on node %s: %v", node.Name, limits)
 
 		var val float64
 		for _, resource := range resources {
 			labels := append([]string{node.Name, resource}, nodeLabelValues...)
 			// get resource requests
-			if v, ok := requests[corev1.ResourceName(resource)]; ok {
+			if v, ok := list.requests[corev1.ResourceName(resource)]; ok {
 				val = v.AsApproximateFloat64()
 			} else {
 				val = 0
@@ -64,7 +69,7 @@ func ReportResourceUsage(ctx context.Context, kubeClient *kubernetes.Clientset, 
 				}
 			}
 			// get resource limits
-			if v, ok := limits[corev1.ResourceName(resource)]; ok {
+			if v, ok := list.limits[corev1.ResourceName(resource)]; ok {
 				val = v.AsApproximateFloat64()
 			} else {
 				val = 0
@@ -72,6 +77,37 @@ func ReportResourceUsage(ctx context.Context, kubeClient *kubernetes.Clientset, 
 			nodeResourceLimits.WithLabelValues(labels...).Set(val)
 		}
 	}
+	log.V(4).Infof("Reporting cycle took %s", time.Since(start).String())
+}
+
+func getNodeResourceMap(ctx context.Context, kubeClient *kubernetes.Clientset, namespace string) (map[string]*resourceList, error) {
+	pods, err := kubeClient.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list the pods: %v", err)
+	}
+	log.V(4).Infof("Found %d pods in %q namespace", len(pods.Items), namespace)
+
+	nodeResources := make(map[string]*resourceList)
+	for _, pod := range pods.Items {
+		if pod.Status.Phase != corev1.PodRunning {
+			continue
+		}
+		list, ok := nodeResources[pod.Spec.NodeName]
+		if !ok {
+			list = &resourceList{
+				requests: make(corev1.ResourceList),
+				limits:   make(corev1.ResourceList),
+			}
+			nodeResources[pod.Spec.NodeName] = list
+		}
+		for _, container := range pod.Spec.Containers {
+			addResourceList(list.requests, container.Resources.Requests)
+			addResourceList(list.limits, container.Resources.Limits)
+		}
+	}
+
+	log.V(4).Infof("Created resource map for %d nodes", len(nodeResources))
+	return nodeResources, nil
 }
 
 func addResourceList(total, addition corev1.ResourceList) {

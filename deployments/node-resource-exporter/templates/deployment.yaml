@@ -48,6 +48,10 @@ spec:
             - {{ .Values.cmd.nodeLabels }}
             - -v
             - "{{ .Values.cmd.verbosity }}"
+            {{- if .Values.cmd.namespace }}
+            - -n
+            - {{ .Values.cmd.namespace }}
+            {{- end }}
           ports:
             - name: metrics
               containerPort: {{ .Values.cmd.port }}
