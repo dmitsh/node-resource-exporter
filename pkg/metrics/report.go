@@ -46,26 +46,23 @@ func ReportResourceUsage(ctx context.Context, client *kubernetes.Clientset, name
 			list = empty
 		}
 
-		//log.Infof("Total requests on node %s: %v", node.Name, requests)
-		//log.Infof("Total limits on node %s: %v", node.Name, limits)
-
 		var val float64
 		for _, resource := range resources {
-			labels := append([]string{node.Name, resource}, nodeLabelValues...)
+			labelValues := append([]string{node.Name, resource}, nodeLabelValues...)
 			// get resource requests
 			if v, ok := list.requests[corev1.ResourceName(resource)]; ok {
 				val = v.AsApproximateFloat64()
 			} else {
 				val = 0
 			}
-			nodeResourceRequests.WithLabelValues(labels...).Set(val)
+			nodeResourceRequests.WithLabelValues(labelValues...).Set(val)
 			// get resource usage in percents
 			if v, ok := node.Status.Allocatable[corev1.ResourceName(resource)]; ok {
 				if allocatable := v.AsApproximateFloat64(); allocatable > 0 {
 					occ := val / allocatable
 
-					log.V(4).Infof("%s occupancy: %f", resource, occ)
-					nodeResourceOccupancy.WithLabelValues(labels...).Set(occ * 100.0)
+					log.V(4).InfoS("metrics", "node", node.Name, "resource", resource, "allocatable", allocatable, "requests", val, "occupancy", occ)
+					nodeResourceOccupancy.WithLabelValues(labelValues...).Set(occ * 100.0)
 				}
 			}
 			// get resource limits
@@ -74,7 +71,7 @@ func ReportResourceUsage(ctx context.Context, client *kubernetes.Clientset, name
 			} else {
 				val = 0
 			}
-			nodeResourceLimits.WithLabelValues(labels...).Set(val)
+			nodeResourceLimits.WithLabelValues(labelValues...).Set(val)
 		}
 	}
 	log.V(4).Infof("Reporting cycle took %s", time.Since(start).String())
