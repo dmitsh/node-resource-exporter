@@ -1,5 +1,5 @@
 PROJECT = node-resource-exporter
-IMAGE_VER := 0.4
+IMAGE_VER := 0.5
 IMAGE_NAME := ${PROJECT}:${IMAGE_VER}
 IMAGE_URL := docker.io/dmitsh/${IMAGE_NAME}
 NAMESPACE ?= monitoring
